@@ -1,36 +1,210 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Business Questionnaire - Executive Summary Blueprint
 
-## Getting Started
+แบบประเมินธุรกิจออนไลน์ 50 คำถาม เพื่อช่วยให้เจ้าของธุรกิจเข้าใจธุรกิจของตนเองอย่างลึกซึ้ง
 
-First, run the development server:
+สร้างโดย AI Transformation Consultant สำหรับช่วยในการวิเคราะห์และพัฒนาธุรกิจด้วย AI
+
+## ✨ Features
+
+- 📝 **50 คำถามครอบคลุม** แบ่งเป็น 10 ส่วนหลัก
+- 💾 **บันทึกอัตโนมัติ** ไม่ต้องกังวลเรื่องข้อมูลหาย
+- 📊 **Progress Tracking** ติดตามความคืบหน้าแบบ real-time
+- 📱 **Responsive Design** ใช้งานได้ทั้งมือถือและคอมพิวเตอร์
+- 🎨 **Modern UI/UX** ออกแบบสวยงาม ใช้งานง่าย
+- 🇹🇭 **รองรับภาษาไทย** ทั้งหมด
+
+## 🏗️ Tech Stack
+
+- **Next.js 15** - React Framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **Prisma** - Next-generation ORM
+- **PostgreSQL** - Production database (configurable)
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ installed
+- npm or yarn package manager
+
+### Installation
 
 ```bash
+# Clone the repository
+cd questionnaire-app
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิดเบราว์เซอร์ที่ [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+questionnaire-app/
+├── app/                       # Next.js App Router
+│   ├── page.tsx              # Home page
+│   ├── layout.tsx            # Root layout
+│   ├── globals.css           # Global styles
+│   ├── admin/                # Admin dashboard
+│   └── questionnaire/        # Questionnaire pages
+│       ├── [sectionId]/      # Dynamic section pages
+│       ├── review/           # Review page
+│       └── complete/         # Completion page
+├── components/               # Reusable components
+│   ├── Button.tsx
+│   ├── ProgressBar.tsx
+│   └── QuestionInput.tsx
+├── data/                     # Question data
+│   └── questions.ts          # All 50 questions
+├── lib/                      # Utilities
+│   ├── prisma.ts            # Prisma client
+│   └── utils.ts             # Helper functions
+├── prisma/                   # Database schema
+│   └── schema.prisma
+├── types/                    # TypeScript types
+│   └── questions.ts
+└── public/                   # Static files
+```
 
-## Learn More
+## 📝 10 Assessment Sections
 
-To learn more about Next.js, take a look at the following resources:
+1. **ข้อมูลทั่วไปของธุรกิจ** - ข้อมูลพื้นฐานของบริษัท
+2. **ตลาด & อุตสาหกรรม** - การวิเคราะห์ตลาดและคู่แข่ง
+3. **โมเดลธุรกิจ** - โครงสร้างและรายได้
+4. **ผู้ก่อตั้ง & ทีมงาน** - ทีมและโครงสร้างองค์กร
+5. **ลูกค้า & ความต้องการ** - ฐานลูกค้าและความพึงพอใจ
+6. **โอกาสขยายธุรกิจ** - ศักยภาพในการเติบโต
+7. **ทางออก & ความเสี่ยง** - Exit Strategy และการจัดการความเสี่ยง
+8. **Digital Readiness & Technology** - ความพร้อมด้านดิจิทัล
+9. **Operations & Efficiency** - ประสิทธิภาพการดำเนินงาน
+10. **Brand & Market Position** - แบรนด์และตำแหน่งในตลาด
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🗄️ Database Setup (For Production)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Option 1: Using Supabase (Recommended)
 
-## Deploy on Vercel
+1. สร้างโปรเจค on [Supabase](https://supabase.com)
+2. Copy Database URL
+3. Update `.env`:
+   ```
+   DATABASE_URL="postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres"
+   ```
+4. Run migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Option 2: Local PostgreSQL
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Install PostgreSQL
+2. Create database:
+   ```sql
+   CREATE DATABASE questionnaire;
+   ```
+3. Update `.env`:
+   ```
+   DATABASE_URL="postgresql://user:password@localhost:5432/questionnaire"
+   ```
+4. Run migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+## 🔧 Development
+
+```bash
+# Run development server with hot reload
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run linter
+npm run lint
+
+# Open Prisma Studio (Database GUI)
+npx prisma studio
+
+# Generate Prisma Client after schema changes
+npx prisma generate
+```
+
+## 🌐 Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. Push code to GitHub
+2. Import project on [Vercel](https://vercel.com)
+3. Set environment variables
+4. Deploy!
+
+### Deploy to Other Platforms
+
+Compatible with:
+- Netlify
+- Railway
+- AWS Amplify
+- DigitalOcean App Platform
+
+## 📊 Current Status
+
+### ✅ Completed Features
+
+- Multi-step questionnaire (10 sections, 50 questions)
+- Progress tracking and auto-save (localStorage)
+- Responsive design
+- Form validation
+- Review page
+- Completion flow
+
+### 🚧 Coming Soon
+
+- Database integration (replace localStorage)
+- Admin dashboard with data visualization
+- PDF/Excel export
+- Email notifications
+- Advanced analytics
+- Multi-language support
+
+## 🤝 Contributing
+
+This project was created for AI Transformation consulting purposes. If you'd like to contribute:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is proprietary software created for AI Transformation consulting services.
+
+## 💡 Use Cases
+
+- Business owners self-assessment
+- Consulting intake forms
+- Pre-investment due diligence
+- Strategic planning workshops
+- AI Transformation readiness assessment
+
+## 📞 Support
+
+For questions or support, please contact the AI Transformation team.
+
+---
+
+**Built with ❤️ for helping businesses grow**
+
+*ตอบ 50 ข้อนี้! และคุณจะรู้จักธุรกิจของคุณจริงๆ*
