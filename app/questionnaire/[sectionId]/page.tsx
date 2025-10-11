@@ -224,15 +224,19 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={handlePrevious}>
-            ← {sectionId > 1 ? 'ส่วนก่อนหน้า' : 'กลับหน้าหลัก'}
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+          <Button variant="outline" onClick={handlePrevious} className="w-full sm:w-auto">
+            <span className="truncate">
+              ← {sectionId > 1 ? 'ส่วนก่อนหน้า' : 'กลับหน้าหลัก'}
+            </span>
           </Button>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 text-center sm:order-none order-last">
             ส่วนที่ {sectionId} / {questionnaireData.sections.length}
           </div>
-          <Button onClick={handleSaveAndContinue}>
-            {sectionId < questionnaireData.sections.length ? 'บันทึกและไปต่อ →' : 'ไปหน้าสรุป →'}
+          <Button onClick={handleSaveAndContinue} className="w-full sm:w-auto">
+            <span className="truncate">
+              {sectionId < questionnaireData.sections.length ? 'บันทึกและไปต่อ →' : 'ไปหน้าสรุป →'}
+            </span>
           </Button>
         </div>
       </div>

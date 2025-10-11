@@ -155,12 +155,14 @@ export default function ReviewPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between items-center mt-8">
-            <Link href={`/questionnaire/${questionnaireData.sections.length}`}>
-              <Button variant="outline">← กลับไปแก้ไข</Button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mt-8">
+            <Link href={`/questionnaire/${questionnaireData.sections.length}`} className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
+                <span className="truncate">← กลับไปแก้ไข</span>
+              </Button>
             </Link>
-            <Button onClick={handleSubmit} size="lg">
-              ส่งแบบประเมิน
+            <Button onClick={handleSubmit} size="lg" className="w-full sm:w-auto">
+              <span className="truncate">ส่งแบบประเมิน</span>
             </Button>
           </div>
         </div>
