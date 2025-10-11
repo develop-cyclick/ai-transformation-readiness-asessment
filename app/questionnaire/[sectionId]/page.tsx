@@ -8,6 +8,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { QuestionInput } from '@/components/QuestionInput';
 import { questionnaireData, getSectionById, getTotalQuestions } from '@/data/questions';
 import { Answer } from '@/types/questions';
+import { getSessionToken, setResponseId } from '@/lib/session';
 
 export default function QuestionnaireSection({ params }: { params: Promise<{ sectionId: string }> }) {
   const resolvedParams = use(params);
@@ -17,20 +18,44 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
   const section = getSectionById(sectionId);
   const [answers, setAnswers] = useState<Record<number, string | number | string[]>>({});
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const [allAnswers, setAllAnswers] = useState<Answer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load existing answers from localStorage
-    const savedAnswers = localStorage.getItem('questionnaire_answers');
-    if (savedAnswers) {
-      const allAnswers: Answer[] = JSON.parse(savedAnswers);
-      const sectionAnswers: Record<number, string | number | string[]> = {};
-      allAnswers
-        .filter((a) => a.sectionId === sectionId)
-        .forEach((a) => {
-          sectionAnswers[a.questionId] = a.value;
-        });
-      setAnswers(sectionAnswers);
+    // Load existing answers from API
+    async function loadAnswers() {
+      const sessionToken = getSessionToken();
+      if (!sessionToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/responses?sessionToken=${sessionToken}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.answers) {
+            setAllAnswers(data.answers);
+            const sectionAnswers: Record<number, string | number | string[]> = {};
+            data.answers
+              .filter((a: any) => a.sectionId === sectionId)
+              .forEach((a: any) => {
+                try {
+                  sectionAnswers[a.questionId] = JSON.parse(a.value);
+                } catch {
+                  sectionAnswers[a.questionId] = a.value;
+                }
+              });
+            setAnswers(sectionAnswers);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading answers:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    loadAnswers();
   }, [sectionId]);
 
   if (!section) {
@@ -46,7 +71,7 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
     );
   }
 
-  const handleSaveAndContinue = () => {
+  const handleSaveAndContinue = async () => {
     // Validate required fields
     const newErrors: Record<number, string> = {};
     section.questions.forEach((q) => {
@@ -60,17 +85,11 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
       return;
     }
 
-    // Save answers to localStorage
-    const savedAnswers = localStorage.getItem('questionnaire_answers');
-    let allAnswers: Answer[] = savedAnswers ? JSON.parse(savedAnswers) : [];
-
-    // Remove existing answers for this section
-    allAnswers = allAnswers.filter((a) => a.sectionId !== sectionId);
-
-    // Add new answers
+    // Prepare answers for this section
+    const sectionAnswers: Answer[] = [];
     section.questions.forEach((q) => {
       if (answers[q.id] !== undefined) {
-        allAnswers.push({
+        sectionAnswers.push({
           questionId: q.id,
           sectionId: section.id,
           value: answers[q.id],
@@ -78,13 +97,41 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
       }
     });
 
-    localStorage.setItem('questionnaire_answers', JSON.stringify(allAnswers));
+    // Calculate total progress
+    let updatedAllAnswers = [...allAnswers.filter((a) => a.sectionId !== sectionId), ...sectionAnswers];
+    const progress = Math.round((updatedAllAnswers.length / getTotalQuestions()) * 100);
 
-    // Navigate to next section or review page
-    if (sectionId < questionnaireData.sections.length) {
-      router.push(`/questionnaire/${sectionId + 1}`);
-    } else {
-      router.push('/questionnaire/review');
+    // Save to API
+    try {
+      const sessionToken = getSessionToken();
+      const response = await fetch('/api/answers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionToken,
+          answers: sectionAnswers,
+          progress
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.responseId) {
+          setResponseId(data.responseId);
+        }
+
+        // Navigate to next section or review page
+        if (sectionId < questionnaireData.sections.length) {
+          router.push(`/questionnaire/${sectionId + 1}`);
+        } else {
+          router.push('/questionnaire/review');
+        }
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองอีกครั้ง');
+      }
+    } catch (error) {
+      console.error('Error saving answers:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองอีกครั้ง');
     }
   };
 
@@ -98,13 +145,20 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
 
   const answeredQuestionsInSection = section.questions.filter((q) => answers[q.id] !== undefined).length;
   const totalAnswered = (() => {
-    const savedAnswers = localStorage.getItem('questionnaire_answers');
-    if (!savedAnswers) return answeredQuestionsInSection;
-    const allAnswers: Answer[] = JSON.parse(savedAnswers);
-    // Count unique question IDs excluding current section, then add current section answers
-    const otherSectionAnswers = allAnswers.filter((a) => a.sectionId !== sectionId).length;
+    const otherSectionAnswers = allAnswers.filter((a: any) => a.sectionId !== sectionId).length;
     return otherSectionAnswers + answeredQuestionsInSection;
   })();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังโหลด...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">

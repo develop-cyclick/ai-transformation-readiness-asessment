@@ -4,19 +4,39 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/Button';
-import { questionnaireData, getQuestionById } from '@/data/questions';
-import { Answer } from '@/types/questions';
+import { questionnaireData } from '@/data/questions';
+import { getSessionToken } from '@/lib/session';
 
 export default function ReviewPage() {
   const router = useRouter();
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [answers, setAnswers] = useState<any[]>([]);
   const [businessName, setBusinessName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedAnswers = localStorage.getItem('questionnaire_answers');
-    if (savedAnswers) {
-      setAnswers(JSON.parse(savedAnswers));
+    async function loadData() {
+      const sessionToken = getSessionToken();
+      if (!sessionToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/responses?sessionToken=${sessionToken}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            setAnswers(data.answers || []);
+            setBusinessName(data.businessName || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    loadData();
   }, []);
 
   const handleSubmit = async () => {
@@ -25,18 +45,41 @@ export default function ReviewPage() {
       return;
     }
 
-    // For now, just save to localStorage
-    // In production, this would save to the database via API
-    localStorage.setItem('questionnaire_business_name', businessName);
-    localStorage.setItem('questionnaire_completed', 'true');
+    const sessionToken = getSessionToken();
+    try {
+      // Update response with business name and mark as completed
+      await fetch('/api/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionToken,
+          businessName,
+          completed: true
+        })
+      });
 
-    router.push('/questionnaire/complete');
+      router.push('/questionnaire/complete');
+    } catch (error) {
+      console.error('Error submitting:', error);
+      alert('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองอีกครั้ง');
+    }
   };
 
   const answersBySection = questionnaireData.sections.map((section) => ({
     section,
     answers: answers.filter((a) => a.sectionId === section.id),
   }));
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังโหลด...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
@@ -57,7 +100,7 @@ export default function ReviewPage() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="กรุณากรอกชื่อบริษัทหรือแบรนด์ของคุณ"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-600"
             />
           </div>
 

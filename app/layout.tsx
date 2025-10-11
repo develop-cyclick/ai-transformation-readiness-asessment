@@ -10,8 +10,8 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai_Looped({
 });
 
 export const metadata: Metadata = {
-  title: "ธุรกิจของคุณพร้อม AI แล้วหรือยัง? | AI Transformation Assessment",
-  description: "ประเมินความพร้อมธุรกิจสู่ยุค AI ด้วยแบบทดสอบ 50 คำถาม วิเคราะห์ศักยภาพและโอกาสในการนำ AI มาขับเคลื่อนธุรกิจของคุณ",
+  title: "ประเมินโอกาสธุรกิจด้วย AI | AI Use Case Development",
+  description: "พัฒนา Use Case สำหรับการนำ AI มาใช้ในองค์กรของคุณ ด้วยแบบฟอร์ม 25 คำถาม วิเคราะห์ปัญหาและสร้างแนวทางการแก้ไขด้วย AI",
 };
 
 export default function RootLayout({

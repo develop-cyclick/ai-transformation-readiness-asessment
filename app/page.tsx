@@ -96,7 +96,7 @@ export default function Home() {
         {/* Footer */}
         <div className="text-center text-gray-600 text-sm">
           <p>สร้างโดย AI Transformation Consultant</p>
-          <p className="mt-2">เพื่อช่วยให้เจ้าของธุรกิจเข้าใจธุรกิจของตนเองมากยิ่งขึ้น</p>
+          <p className="mt-2">เพื่อช่วยให้องค์กรพัฒนา Use Case และนำ AI มาใช้แก้ปัญหาธุรกิจอย่างมีประสิทธิภาพ</p>
         </div>
       </div>
     </main>
