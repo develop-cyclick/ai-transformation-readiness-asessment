@@ -7,9 +7,16 @@ import { Button } from '@/components/Button';
 import { questionnaireData } from '@/data/questions';
 import { getSessionToken } from '@/lib/session';
 
+interface StoredAnswer {
+  id: string;
+  questionId: number;
+  sectionId: number;
+  value: string;
+}
+
 export default function ReviewPage() {
   const router = useRouter();
-  const [answers, setAnswers] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<StoredAnswer[]>([]);
   const [businessName, setBusinessName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 

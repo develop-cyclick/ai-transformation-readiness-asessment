@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/Button';
 
 export default function AdminLoginPage() {
@@ -124,9 +125,9 @@ export default function AdminLoginPage() {
 
           {/* Back to Home Link */}
           <div className="mt-6 text-center">
-            <a href="/" className="text-sm text-blue-600 hover:text-blue-700">
+            <Link href="/" className="text-sm text-blue-600 hover:text-blue-700">
               ← กลับหน้าหลัก
-            </a>
+            </Link>
           </div>
         </div>
       </div>

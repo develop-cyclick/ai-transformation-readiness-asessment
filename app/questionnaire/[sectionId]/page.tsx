@@ -10,6 +10,13 @@ import { questionnaireData, getSectionById, getTotalQuestions } from '@/data/que
 import { Answer } from '@/types/questions';
 import { getSessionToken, setResponseId } from '@/lib/session';
 
+interface StoredAnswer {
+  id: string;
+  questionId: number;
+  sectionId: number;
+  value: string;
+}
+
 export default function QuestionnaireSection({ params }: { params: Promise<{ sectionId: string }> }) {
   const resolvedParams = use(params);
   const sectionId = parseInt(resolvedParams.sectionId);
@@ -38,8 +45,8 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
             setAllAnswers(data.answers);
             const sectionAnswers: Record<number, string | number | string[]> = {};
             data.answers
-              .filter((a: any) => a.sectionId === sectionId)
-              .forEach((a: any) => {
+              .filter((a: StoredAnswer) => a.sectionId === sectionId)
+              .forEach((a: StoredAnswer) => {
                 try {
                   sectionAnswers[a.questionId] = JSON.parse(a.value);
                 } catch {
@@ -98,7 +105,7 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
     });
 
     // Calculate total progress
-    let updatedAllAnswers = [...allAnswers.filter((a) => a.sectionId !== sectionId), ...sectionAnswers];
+    const updatedAllAnswers = [...allAnswers.filter((a) => a.sectionId !== sectionId), ...sectionAnswers];
     const progress = Math.round((updatedAllAnswers.length / getTotalQuestions()) * 100);
 
     // Save to API
@@ -145,7 +152,7 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
 
   const answeredQuestionsInSection = section.questions.filter((q) => answers[q.id] !== undefined).length;
   const totalAnswered = (() => {
-    const otherSectionAnswers = allAnswers.filter((a: any) => a.sectionId !== sectionId).length;
+    const otherSectionAnswers = allAnswers.filter((a: Answer) => a.sectionId !== sectionId).length;
     return otherSectionAnswers + answeredQuestionsInSection;
   })();
 
@@ -189,7 +196,7 @@ export default function QuestionnaireSection({ params }: { params: Promise<{ sec
           </div>
 
           <div className="space-y-8">
-            {section.questions.map((question, index) => (
+            {section.questions.map((question) => (
               <div key={question.id} className="border-b border-gray-200 pb-8 last:border-0">
                 <label className="block mb-3">
                   <span className="text-lg font-medium text-gray-900">

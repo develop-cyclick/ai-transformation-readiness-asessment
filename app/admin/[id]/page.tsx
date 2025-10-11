@@ -32,22 +32,22 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    async function loadResponse() {
+      try {
+        const res = await fetch(`/api/responses/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setResponse(data);
+        }
+      } catch (error) {
+        console.error('Error loading response:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     loadResponse();
   }, [id]);
-
-  async function loadResponse() {
-    try {
-      const res = await fetch(`/api/responses/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setResponse(data);
-      }
-    } catch (error) {
-      console.error('Error loading response:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function handleDelete() {
     if (!confirm('คุณต้องการลบข้อมูลนี้หรือไม่?')) return;
