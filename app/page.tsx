@@ -122,15 +122,10 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Link href="/questionnaire/1">
               <Button size="lg" className="w-full sm:w-auto">
                 เริ่มทำแบบประเมิน
-              </Button>
-            </Link>
-            <Link href="/admin">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                ดูผลการประเมิน (Admin)
               </Button>
             </Link>
           </div>
