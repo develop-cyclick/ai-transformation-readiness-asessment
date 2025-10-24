@@ -55,6 +55,28 @@ export default function AdminPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      const response = await fetch('/api/responses/export');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `responses-export-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+    }
+  }
+
   const filteredResponses = responses.filter(r => {
     const matchesSearch = searchTerm === '' ||
       (r.businessName?.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -169,7 +191,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Filters and Export */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
@@ -212,6 +234,17 @@ export default function AdminPage() {
               >
                 ยังไม่เสร็จ
               </button>
+              <Button
+                variant="primary"
+                onClick={handleExport}
+                size="sm"
+                disabled={responses.length === 0}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                ส่งออก CSV
+              </Button>
             </div>
           </div>
         </div>
