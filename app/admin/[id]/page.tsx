@@ -30,6 +30,19 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
 
   const [response, setResponse] = useState<ResponseData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedData, setEditedData] = useState<{
+    businessName: string;
+    email: string;
+    completed: boolean;
+    answers: { [key: number]: string };
+  }>({
+    businessName: '',
+    email: '',
+    completed: false,
+    answers: {}
+  });
 
   useEffect(() => {
     async function loadResponse() {
@@ -38,6 +51,19 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
         if (res.ok) {
           const data = await res.json();
           setResponse(data);
+
+          // Initialize edited data
+          const answersMap: { [key: number]: string } = {};
+          data.answers.forEach((a: { questionId: number; value: string }) => {
+            answersMap[a.questionId] = a.value;
+          });
+
+          setEditedData({
+            businessName: data.businessName || '',
+            email: data.email || '',
+            completed: data.completed,
+            answers: answersMap
+          });
         }
       } catch (error) {
         console.error('Error loading response:', error);
@@ -49,8 +75,79 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
     loadResponse();
   }, [id]);
 
+  async function handleSave() {
+    if (!response) return;
+
+    setIsSaving(true);
+    try {
+      // Prepare answers array
+      const answers = Object.entries(editedData.answers).map(([questionId, value]) => {
+        const question = questionnaireData.sections
+          .flatMap(s => s.questions.map(q => ({ ...q, sectionId: s.id })))
+          .find(q => q.id === parseInt(questionId));
+
+        return {
+          id: `${response.id}-${questionId}`,
+          questionId: parseInt(questionId),
+          sectionId: question?.sectionId || 1,
+          value: value
+        };
+      });
+
+      // Calculate progress
+      const totalQuestions = getTotalQuestions();
+      const answeredQuestions = Object.values(editedData.answers).filter(v => v.trim() !== '').length;
+      const progress = Math.round((answeredQuestions / totalQuestions) * 100);
+
+      const res = await fetch(`/api/responses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: editedData.businessName,
+          email: editedData.email,
+          completed: editedData.completed,
+          progress: progress,
+          answers: answers
+        })
+      });
+
+      if (res.ok) {
+        alert('บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว');
+        setIsEditing(false);
+        // Reload response
+        window.location.reload();
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      }
+    } catch (error) {
+      console.error('Error saving response:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function handleCancel() {
+    if (!response) return;
+
+    // Reset to original data
+    const answersMap: { [key: number]: string } = {};
+    response.answers.forEach((a: { questionId: number; value: string }) => {
+      answersMap[a.questionId] = a.value;
+    });
+
+    setEditedData({
+      businessName: response.businessName || '',
+      email: response.email || '',
+      completed: response.completed,
+      answers: answersMap
+    });
+
+    setIsEditing(false);
+  }
+
   async function handleDelete() {
-    if (!confirm('คุณต้องการลบข้อมูลนี้หรือไม่?')) return;
+    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
 
     try {
       const res = await fetch(`/api/responses/${id}`, { method: 'DELETE' });
@@ -137,22 +234,105 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleDelete}>
-                ลบข้อมูล
-              </Button>
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={handleDelete}>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    ลบ
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    แก้ไข
+                  </Button>
+                </>
+              )}
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ชื่อบริษัท
+              </label>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.businessName}
+                  onChange={(e) => setEditedData({ ...editedData, businessName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="ชื่อบริษัท"
+                />
+              ) : (
+                <p className="text-gray-900 bg-gray-50 rounded-lg p-3">{response.businessName || '-'}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                อีเมล
+              </label>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editedData.email}
+                  onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="อีเมล"
+                />
+              ) : (
+                <p className="text-gray-900 bg-gray-50 rounded-lg p-3">{response.email || '-'}</p>
+              )}
+            </div>
+          </div>
+
+          {isEditing && (
+            <div className="mb-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={editedData.completed}
+                  onChange={(e) => setEditedData({ ...editedData, completed: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">ทำเครื่องหมายว่าเสร็จสมบูรณ์</span>
+              </label>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-sm text-gray-600 mb-1">สถานะ</p>
               <p className="font-semibold">
                 <span className={`px-2 py-1 rounded-full text-sm ${
-                  response.completed
+                  (isEditing ? editedData.completed : response.completed)
                     ? 'bg-green-100 text-green-800'
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {response.completed ? 'เสร็จสมบูรณ์' : 'ยังไม่เสร็จ'}
+                  {(isEditing ? editedData.completed : response.completed) ? 'เสร็จสมบูรณ์' : 'ยังไม่เสร็จ'}
                 </span>
               </p>
             </div>
@@ -204,33 +384,87 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
                 </div>
 
                 <div className="ml-13 space-y-4">
-                  {answers.length === 0 ? (
-                    <p className="text-gray-500 italic">ยังไม่ได้ตอบคำถามในส่วนนี้</p>
-                  ) : (
-                    answers.map((answer) => {
-                      const questionData = getQuestionById(answer.questionId);
-                      if (!questionData) return null;
+                  {section.questions.map((question) => {
+                    const answer = answers.find(a => a.questionId === question.id);
+                    const currentValue = isEditing
+                      ? (editedData.answers[question.id] || '')
+                      : (answer?.value || '');
 
-                      let displayValue = answer.value;
+                    let displayValue = currentValue;
+                    if (!isEditing) {
                       try {
-                        const parsed = JSON.parse(answer.value);
+                        const parsed = JSON.parse(currentValue);
                         if (Array.isArray(parsed)) {
                           displayValue = parsed.join(', ');
                         }
                       } catch {
                         // Value is already a string
                       }
+                    }
 
-                      return (
-                        <div key={answer.id} className="bg-gray-50 rounded-lg p-4">
-                          <p className="font-medium text-gray-900 mb-2">
-                            {answer.questionId}. {questionData.question.text}
+                    return (
+                      <div key={question.id} className="bg-gray-50 rounded-lg p-4">
+                        <p className="font-medium text-gray-900 mb-2">
+                          {question.id}. {question.text}
+                          {question.required && <span className="text-red-500 ml-1">*</span>}
+                        </p>
+                        {isEditing ? (
+                          question.type === 'textarea' ? (
+                            <textarea
+                              value={displayValue}
+                              onChange={(e) => setEditedData({
+                                ...editedData,
+                                answers: {
+                                  ...editedData.answers,
+                                  [question.id]: e.target.value
+                                }
+                              })}
+                              rows={4}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                              placeholder={question.placeholder}
+                            />
+                          ) : question.type === 'select' ? (
+                            <select
+                              value={displayValue}
+                              onChange={(e) => setEditedData({
+                                ...editedData,
+                                answers: {
+                                  ...editedData.answers,
+                                  [question.id]: e.target.value
+                                }
+                              })}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                            >
+                              <option value="">เลือก...</option>
+                              {question.options?.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={question.type === 'number' ? 'number' : 'text'}
+                              value={displayValue}
+                              onChange={(e) => setEditedData({
+                                ...editedData,
+                                answers: {
+                                  ...editedData.answers,
+                                  [question.id]: e.target.value
+                                }
+                              })}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                              placeholder={question.placeholder}
+                            />
+                          )
+                        ) : (
+                          <p className="text-gray-700 whitespace-pre-wrap">
+                            {displayValue || <span className="text-gray-400 italic">ยังไม่ได้ตอบ</span>}
                           </p>
-                          <p className="text-gray-700 whitespace-pre-wrap">{displayValue}</p>
-                        </div>
-                      );
-                    })
-                  )}
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
