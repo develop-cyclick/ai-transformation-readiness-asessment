@@ -30,7 +30,7 @@ model Response {
   sessionToken String?  @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime
-  Answer       Answer[]
+  answers      Answer[]
 
   @@index([completed])
   @@index([email])
