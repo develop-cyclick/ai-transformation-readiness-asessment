@@ -77,29 +77,31 @@ export async function POST(request: NextRequest) {
     }));
 
     // Generate file based on format
-    let fileBuffer: Buffer;
+    let blob: Blob;
     let contentType: string;
     let filename: string;
 
     if (format === 'csv') {
       const csvContent = generateCSV(responseData);
-      fileBuffer = Buffer.from(csvContent, 'utf-8');
+      const buffer = Buffer.from(csvContent, 'utf-8');
       contentType = 'text/csv; charset=utf-8';
       filename = generateFilename('csv', responseData.length, responseData[0]?.businessName || undefined);
+      blob = new Blob([new Uint8Array(buffer)], { type: contentType });
     } else {
       // Excel
-      fileBuffer = generateExcel(responseData);
+      const buffer = generateExcel(responseData);
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       filename = generateFilename('xlsx', responseData.length, responseData[0]?.businessName || undefined);
+      blob = new Blob([new Uint8Array(buffer)], { type: contentType });
     }
 
     // Return file as download
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(blob, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': fileBuffer.length.toString(),
+        'Content-Length': blob.size.toString(),
       },
     });
 

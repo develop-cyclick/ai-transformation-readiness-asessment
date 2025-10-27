@@ -126,7 +126,7 @@ export default function ResponseDetailPage({ params }: { params: Promise<{ id: s
     }
   }
 
-  function updateEditedField(field: keyof ResponseData, value: any) {
+  function updateEditedField(field: keyof ResponseData, value: string | null) {
     if (!editedData) return;
     setEditedData({ ...editedData, [field]: value });
   }
